@@ -25,7 +25,7 @@ int Generator::init()
 float Generator::voltage()
 {
   // Convert Digital Value to Float Voltage
-  return (5.0*analogRead(pin))/1024;
+  return (5.0*analogRead(_pin))/1024;
 }
 
 int initGenerator()

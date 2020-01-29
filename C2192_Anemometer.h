@@ -5,10 +5,10 @@
 
 #define ANEMOMETER_PIN 8
 
-class C2192_Anemometer()
+class C2192_Anemometer
 {
 public:
-  Anemometer(int pin);
+  C2192_Anemometer(int pin);
   int init();
   float windspeed();
 private:

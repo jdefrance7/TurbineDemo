@@ -6,14 +6,15 @@
 
 #define GENERATOR_PIN 7
 
-class Generator()
+class Generator
 {
 public:
   Generator(int pin);
   float voltage();
+  int init();
 private:
   int _pin;
-}
+};
 
 extern Generator gen;
 

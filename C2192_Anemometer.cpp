@@ -1,8 +1,8 @@
 #include "C2192_Anemometer.h"
 
-C2192_Anemometer anemometer = Anemometer(ANEMOMETER_PIN);
+C2192_Anemometer anemometer = C2192_Anemometer(ANEMOMETER_PIN);
 
-C2192_Anemometer::Anemometer(int pin)
+C2192_Anemometer::C2192_Anemometer(int pin)
 {
   _pin = pin;
 }

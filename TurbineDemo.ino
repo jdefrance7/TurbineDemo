@@ -209,11 +209,19 @@ int handleCommand()
         break;
       case GET_SPEED_BUFFER:
         Serial.print("SPEEDS ");
-        Serial.println(speeds);
+        for(int n = 0; n < BUFFER_SIZE; n++)
+        {
+          Serial.print(speeds[n]);
+        }
+        Serial.print('\n');
         break;
       case GET_VOLTAGE_BUFFER:
         Serial.print("VOLTAGES ");
-        Serial.println(voltages);
+        for(int n = 0; n < BUFFER_SIZE; n++)
+        {
+          Serial.print(voltages[n]);
+        }
+        Serial.print('\n');
       default:
         Serial.print("ERROR ");
         Serial.println(data);
