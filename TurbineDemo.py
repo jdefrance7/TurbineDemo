@@ -14,6 +14,7 @@ from datetime import timedelta
 
 # Arduino Commands
 TEST_CONNECTION = 0
+TEST_RESPONSE   = 0x3
 GET_AVERAGE_SPEED = 1
 GET_AVERAGE_VOLTAGE = 2
 CLEAR_BUFFERS = 3
@@ -50,7 +51,8 @@ def serial_ports():
     return result
 
 # Serial Port Object
-ser = serial.Serial();
+ser = serial.Serial()
+SERIAL_ENABLED = False
 
 # Matplotlib Setup
 mplstyle.use('dark_background')
@@ -62,38 +64,135 @@ def animate(i):
     # TODO: read & plot data
     return
 
+def configurePort():
+    while(1):
+        ports = serial_ports()
+        print("\nPORTS: ")
+        for n in range(len(ports)):
+            print(" {}. {}".format(n, ports[n]))
+        user = input("\n SELECT: ")
+
+        if user == "HELP":
+            print("HELP: Enter port number from list or type port name.")
+        elif user == "EXIT":
+            return 0
+        elif user in ports:
+            try:
+                ser.port = user
+            except:
+                print("ERROR: Unable to set port to '{}'.".format(user))
+            else:
+                return 0
+        else:
+            try:
+                user = int(user)
+            except:
+                print("ERROR: Invalid entry '{}''.".format(user))
+            else:
+                if user < len(ports):
+                    try:
+                        ser.port = ports[user]
+                    except:
+                        print("ERROR: Unable to set port to '{}'.".format(ports[user]))
+                    else:
+                        return 0
+                else:
+                    print("ERROR: Entry outside of range.")
+    return 0
+
+def configureBaudrate():
+    while(1):
+        baudrates = BAUDRATES
+        print("\nBAUDRATES: ")
+        for n in range(len(baudrates)):
+            print(" {}. {}".format(n, baudrates[n]))
+        user = input("\n SELECT: ")
+
+        if user == "HELP":
+            print("HELP: Enter baudrate number from list or type baudrate value.")
+        elif user == "EXIT":
+            return 0
+        else:
+            try:
+                user = int(user)
+            except:
+                print("ERROR: Invalid entry '{}'.".format(user))
+            else:
+                if 0 < user and user < len(baudrates):
+                    try:
+                        ser.baudrate = baudrates[user]
+                    except:
+                        print("ERROR: Unable to set baudrate to '{}'.".format(baudrates[user]))
+                    else:
+                        return 0
+                elif user > len(baudrates):
+                    try:
+                        ser.baudrate = user
+                    except:
+                        print("ERROR: Unable to set baudrate to '{}'.".format(user))
+                    else:
+                        return 0
+                else:
+                    print("ERROR: Invalid entry '{}'.".format(user))
+    return 0
+
 def testConnection():
     try:
         ser.open()
-        # TODO: Send TEST_CONNECTION and check response.
-        ser.close()
     except:
-        return "Disconnected"
+        print("ERROR: Unable to open port '{}' with baud '{}'".format(ser.port, ser.baudrate))
+        SERIAL_ENABLED = False
     else:
-        return "Connnected"
+        try:
+            ser.write(bytes([TEST_CONNECTION]))
+            time.sleep(1)
+            if ser.in_waiting:
+                data = int.from_bytes(ser.read(), 'little')
+                if data == TEST_RESPONSE:
+                    print("OKAY: Serial port connected.")
+                    SERIAL_ENABLED = True
+                else:
+                    print("ERROR: Response '{}' did not match expected '{}'".format(data, TEST_RESPONSE))
+                    SERIAL_ENABLED = False
+            else:
+                print("ERROR: No response from serial port.")
+                SERIAL_ENABLED = False
+        except:
+            print("ERROR: A problem occured during serial transmission.")
+            SERIAL_ENABLED = False
+        finally:
+            ser.close()
+
+    return SERIAL_ENABLED
 
 def runDemo():
 
     return 0
 
 def configureSerial():
-
     while(1):
         print("\nSERIAL INFORMATION: ")
-        print("PORT: ".format(ser.port))
-        print("BAUD: ".format(ser.baudrate))
-        print("TEST: ".format(testConnection()))
+        print("PORT: {}".format(ser.port))
+        print("BAUD: {}".format(ser.baudrate))
+        print("TEST: {}".format(SERIAL_ENABLED)
 
         user = input("\nCOMMAND: ");
 
         if user == "PORT":
-            # TODO: Configure Port
+            configurePort()
         elif user == "BAUD":
-            # TODO: Configure Baudrate
+            configureBaudrate()
         elif user == "TEST":
-            # TODO: Test Connection
+            testConnection()
         elif user == "HELP":
-            # TODO: Print Help Info
+            print("Supported Commands: ")
+            print("  PORT - Select port from available list.")
+            print("  BAUD - Select baudrate from available list.")
+            print("  TEST - Test connection with port and baudrate.")
+            print("  HELP - Prints list of supported commands.")
+            print("  EXIT - Return to main menu.")
+        elif user == "EXIT":
+            return
         else:
             print("ERROR: Invalid command '{}'".format(user))
 
@@ -102,14 +201,17 @@ def configureSerial():
 def setup():
     print("Welcome to the Innovative Engineer's Wind Turbine Demo!")
     print("Navigate by entering commands in the terminal.")
-    print("Type 'HELP' at anytime to get information.")
+    print("Type 'HELP' at anytime to get menu information.")
     return 0
 
 # Main Loop (Command Line Style)
 def loop():
 
     # Print Ready Status
-    # TODO: status flag after setup
+    if SERIAL_ENABLED:
+        print("STATUS: READY")
+    else:
+        print("STATUS: NOT READY")
 
     # Get Command From User
     user = input("\nCOMMAND: ")
@@ -132,15 +234,16 @@ def loop():
     # COMMAND: HELP
     elif user == "HELP":
         print("Supported Commands: ")
-        print("  RUN - Runs demo if serial port is configured. Enter 'QUIT' to stop.")
-        print("  SETUP - Menu to configure serial port.")
+        print("  RUN - Runs demo if serial port is configured.")
+        print("  SETUP - Menu to configure serial port and test connection.")
         print("  HELP - Lists supported commands.")
 
     # INVALID COMMAND
     else:
         print("ERROR: Invalid command '{}'".format(user))
-        print("NOTE: Enter 'HELP' to get list of supported commands.")
+        print("INFO: Enter 'HELP' to get list of supported commands.")
 
+    # Return
     return 0
 
 if __name__ == '__main__':
