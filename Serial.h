@@ -6,7 +6,7 @@
 // Arduino Library
 #include <Arduino.h>
 
-#define BAUDRATE 115200
+#define BAUDRATE 9600
 
 int initSerial();
 

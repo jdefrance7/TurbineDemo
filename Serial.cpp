@@ -7,9 +7,13 @@ int initSerial()
   Serial.begin(BAUDRATE);
 
   // Checks for success
-  if(!Serial)
+  long timeout = millis();
+  while(!Serial)
   {
-    return -1;
+    if(millis()-timeout > 10000)
+    {
+      return -1;
+    }
   }
   return 0;
 }

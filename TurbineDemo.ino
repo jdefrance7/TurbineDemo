@@ -7,37 +7,40 @@
 #include "LCDShield.h"
 #include "C2192_Anemometer.h"
 
-// Built-In LED Pin for Adafruit M0
+// Built-In LED Pin for Arduino UNO
 #define LED_PIN 13
 
-// Serial Commands
-#define GET_AVERAGE_SPEED     1
-#define GET_AVERAGE_VOLTAGE   2
-#define CLEAR_BUFFERS         3
-#define GET_SPEED_BUFFER      4
-#define GET_VOLTAGE_BUFFER    5
-
-// Time Interval to Log Data (ms)
+// Time Interval to Log Data to Internal Buffers (ms)
 #define DATA_INTERVAL 100
 
-// Time Interval to Update Display (ms)
+// Time Interval to Update LCD Display of Averages (ms)
 #define DISPLAY_INTERVAL 1000
+
+// Time Interval to Print Averages to Serial Port (ms)
+#define PRINT_INTERVAL 500
 
 // Size of Data Buffers
 #define BUFFER_SIZE 16
 
 // Buffer Variables
-int index;
+int speedIndex = 0;
+int voltageIndex = 0;
 float speeds[BUFFER_SIZE];
 float voltages[BUFFER_SIZE];
+
+// // Print Variable
+// bool BROADCAST = false;
+
+bool LED_STATE = false;
 
 // Setup Function Declarations
 int initModules();
 
 // Loop Function Declarations
 int logData();
+// int checkSerial();
+int printData();
 int updateDisplay();
-int handleCommand();
 
 // Support Function Declarations
 int toggleLED();
@@ -56,9 +59,18 @@ void loop()
 {
   logData();
 
-  updateDisplay();
+/*
+  checkSerial();
 
-  handleCommand();
+  if(BROADCAST)
+  {
+      printData();
+  }
+*/
+
+  printData();
+
+  updateDisplay();
 }
 
 int initModules()
@@ -138,20 +150,86 @@ int logData()
   if(millis()-dataTime > DATA_INTERVAL)
   {
     // Record Windspeed
-    speeds[index] = anemometer.windspeed();
+    speeds[speedIndex] = anemometer.windspeed();
 
     // Record Voltage
-    voltages[index] = gen.voltage();
+    voltages[voltageIndex] = gen.voltage();
 
-    // Increment Index
-    index = index + 1;
-    index = index % BUFFER_SIZE;
+    // Increment Indexes
+    speedIndex = speedIndex + 1;
+    speedIndex = speedIndex % BUFFER_SIZE;
+
+    voltageIndex = voltageIndex + 1;
+    voltageIndex = voltageIndex % BUFFER_SIZE;
 
     // Update Data Time
     dataTime = millis();
   }
 
   return 0;
+}
+
+/*
+int checkSerial()
+{
+  char input;
+
+  if(Serial)
+  {
+    if(Serial.available())
+    {
+      // Read Byte/Char from Serial
+      input = Serial.read();
+
+      // Enter Broadcast Mode
+      if(input == 'B')
+      {
+        BROADCAST = true;
+      }
+
+      // Exit Broadcast Mode
+      else if(input == 'S')
+      {
+        BROADCAST = false;
+      }
+
+      // Print Single Data Pair to Serial
+      else if(input == 'D')
+      {
+        Serial.print(averageSpeed());
+        Serial.print(", ");
+        Serial.print(averageVoltage());
+        Serial.print("\n");
+      }
+
+      // Clear Serial Iput Buffer
+      while(Serial.available())
+      {
+        Serial.read();
+      }
+    }
+    return 0;
+  }
+  // Error with Serial
+  return -1;
+}
+*/
+
+int printData()
+{
+  static long printTime = millis();
+
+  if(millis() - printTime > PRINT_INTERVAL)
+  { 
+    // Print Updated Averages
+    Serial.print(averageSpeed());
+    Serial.print(", ");
+    Serial.print(averageVoltage());
+    Serial.print("\n");
+
+    // Update Print Time
+    printTime = millis();
+  }
 }
 
 int updateDisplay()
@@ -179,54 +257,6 @@ int updateDisplay()
 
     // Update Display Time
     displayTime = millis();
-  }
-
-  return 0;
-}
-
-int handleCommand()
-{
-  // Data Variable for Serial Commands
-  static byte data;
-
-  // Check Serial Module for Command
-  if(Serial.available())
-  {
-    data = Serial.read();
-    switch(data)
-    {
-      case GET_AVERAGE_SPEED:
-        Serial.print("SPEED ");
-        Serial.println(averageSpeed());
-        break;
-      case GET_AVERAGE_VOLTAGE:
-        Serial.print("VOLTAGE ");
-        Serial.println(averageVoltage());
-        break;
-      case CLEAR_BUFFERS:
-        Serial.println("CLEAR");
-        clearBuffers();
-        break;
-      case GET_SPEED_BUFFER:
-        Serial.print("SPEEDS ");
-        for(int n = 0; n < BUFFER_SIZE; n++)
-        {
-          Serial.print(speeds[n]);
-        }
-        Serial.print('\n');
-        break;
-      case GET_VOLTAGE_BUFFER:
-        Serial.print("VOLTAGES ");
-        for(int n = 0; n < BUFFER_SIZE; n++)
-        {
-          Serial.print(voltages[n]);
-        }
-        Serial.print('\n');
-      default:
-        Serial.print("ERROR ");
-        Serial.println(data);
-        break;
-    }
   }
 
   return 0;
