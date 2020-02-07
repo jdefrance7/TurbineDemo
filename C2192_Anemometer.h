@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 
-#define ANEMOMETER_PIN 8
+#define ANEMOMETER_PIN A0
 
 class C2192_Anemometer
 {

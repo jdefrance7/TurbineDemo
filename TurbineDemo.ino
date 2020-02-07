@@ -11,13 +11,13 @@
 #define LED_PIN 13
 
 // Time Interval to Log Data to Internal Buffers (ms)
-#define DATA_INTERVAL 100
+#define DATA_INTERVAL 50
 
 // Time Interval to Update LCD Display of Averages (ms)
 #define DISPLAY_INTERVAL 1000
 
 // Time Interval to Print Averages to Serial Port (ms)
-#define PRINT_INTERVAL 500
+#define PRINT_INTERVAL 1000
 
 // Size of Data Buffers
 #define BUFFER_SIZE 16

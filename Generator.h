@@ -4,7 +4,7 @@
 // Arduino Library
 #include <Arduino.h>
 
-#define GENERATOR_PIN 7
+#define GENERATOR_PIN A1
 
 class Generator
 {

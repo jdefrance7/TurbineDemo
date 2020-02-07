@@ -24,11 +24,11 @@ WIND = 0
 VOLTAGE = 1
 
 # Max Values (to Scale Graphs)
-MAX_WIND = 30
+MAX_WIND = 10
 MAX_VOLTAGE = 6
 
 # Refresh Rate of Matplotlib Animation (ms)
-REFRESH = 750
+REFRESH = 1000
 
 # Matplotlib Grid Strength
 GRID_ALPHA = 0.2
@@ -67,7 +67,15 @@ def get_data():
         print("\nERROR: Serial port '{}' is not open.".format(ser.port))
         return -1
 
-    # Read returning line of bytes from serial port
+    # Clear Input Buffer
+    while(ser.in_waiting):
+        try:
+            ser.readline()
+        except:
+            print("\nERROR: Unable to clear input buffer.")
+            return -1
+
+    # Read new line of bytes from serial port
     try:
         data = ser.readline()
     except:
@@ -137,7 +145,7 @@ def animate(i):
 
     ax[WIND].clear()
     ax[WIND].set_title('Wind Speed')
-    # ax[WIND].set_xlabel()
+    ax[WIND].set_xlabel("Value")
     ax[WIND].set_ylabel("Meters/Second")
     ax[WIND].set_ylim(bottom = 0, top = MAX_WIND)
     ax[WIND].grid(alpha = GRID_ALPHA)
@@ -145,7 +153,7 @@ def animate(i):
 
     ax[VOLTAGE].clear()
     ax[VOLTAGE].set_title("Voltage")
-    # ax[VOLTAGE].set_xlabel()
+    ax[VOLTAGE].set_xlabel("Value")
     ax[VOLTAGE].set_ylabel("Volts")
     ax[VOLTAGE].set_ylim(bottom = 0, top = MAX_VOLTAGE)
     ax[VOLTAGE].grid(alpha = GRID_ALPHA)

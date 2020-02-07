@@ -38,7 +38,7 @@ float C2192_Anemometer::windspeed()
   voltage /= 1024;
 
   // Convert Voltage to Windspeed (see datasheet)
-  return ((20*voltage) - 7.6);
+  return (((20.25*voltage) - 8.1)-0.11);
 }
 
 int initAnemometer()
