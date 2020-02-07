@@ -57,20 +57,45 @@ void setup()
 
 void loop()
 {
-  logData();
+  // Static Variable for Recording Data
+  static long dataTime = millis();
 
-/*
-  checkSerial();
-
-  if(BROADCAST)
+  // Get Data each Data Interval
+  if(millis()-dataTime > DATA_INTERVAL)
   {
-      printData();
+    // Log Data
+    logData();
+
+    // Update Data Time
+    dataTime = millis();
   }
-*/
 
-  printData();
+  // Static Variable for Printing Data
+  static long printTime = millis();
 
-  updateDisplay();
+  // Print Data each Print Interval
+  if(millis() - printTime > PRINT_INTERVAL)
+  {
+    // Print Average Data to Serial Port
+    printData();
+
+    // Update Print Time
+    printTime = millis();
+  }
+
+
+  // Static Variable for Updating Display
+  static long displayTime = millis();
+
+  // Update Display each Display Interval
+  if(millis() - displayTime > DISPLAY_INTERVAL)
+  {
+    // Update Display with new Averages
+    updateDisplay();
+
+    // Update Display Time
+    displayTime = millis();
+  }
 }
 
 int initModules()
@@ -143,121 +168,48 @@ int clearBuffers()
 
 int logData()
 {
-  // Static Variable for Recording Data
-  static long dataTime = millis();
 
-  // Get Data each Data Interval
-  if(millis()-dataTime > DATA_INTERVAL)
-  {
-    // Record Windspeed
-    speeds[speedIndex] = anemometer.windspeed();
+  // Record Windspeed
+  speeds[speedIndex] = anemometer.windspeed();
 
-    // Record Voltage
-    voltages[voltageIndex] = gen.voltage();
+  // Record Voltage
+  voltages[voltageIndex] = gen.voltage();
 
-    // Increment Indexes
-    speedIndex = speedIndex + 1;
-    speedIndex = speedIndex % BUFFER_SIZE;
+  // Increment Indexes
+  speedIndex = speedIndex + 1;
+  speedIndex = speedIndex % BUFFER_SIZE;
 
-    voltageIndex = voltageIndex + 1;
-    voltageIndex = voltageIndex % BUFFER_SIZE;
-
-    // Update Data Time
-    dataTime = millis();
-  }
+  voltageIndex = voltageIndex + 1;
+  voltageIndex = voltageIndex % BUFFER_SIZE;
 
   return 0;
 }
 
-/*
-int checkSerial()
-{
-  char input;
-
-  if(Serial)
-  {
-    if(Serial.available())
-    {
-      // Read Byte/Char from Serial
-      input = Serial.read();
-
-      // Enter Broadcast Mode
-      if(input == 'B')
-      {
-        BROADCAST = true;
-      }
-
-      // Exit Broadcast Mode
-      else if(input == 'S')
-      {
-        BROADCAST = false;
-      }
-
-      // Print Single Data Pair to Serial
-      else if(input == 'D')
-      {
-        Serial.print(averageSpeed());
-        Serial.print(", ");
-        Serial.print(averageVoltage());
-        Serial.print("\n");
-      }
-
-      // Clear Serial Iput Buffer
-      while(Serial.available())
-      {
-        Serial.read();
-      }
-    }
-    return 0;
-  }
-  // Error with Serial
-  return -1;
-}
-*/
-
 int printData()
 {
-  static long printTime = millis();
-
-  if(millis() - printTime > PRINT_INTERVAL)
-  { 
-    // Print Updated Averages
-    Serial.print(averageSpeed());
-    Serial.print(", ");
-    Serial.print(averageVoltage());
-    Serial.print("\n");
-
-    // Update Print Time
-    printTime = millis();
-  }
+  // Print Updated Averages
+  Serial.print(averageSpeed());
+  Serial.print(", ");
+  Serial.print(averageVoltage());
+  Serial.print("\n");
 }
 
 int updateDisplay()
 {
-  // Static Variable for Updating Display
-  static long displayTime = millis();
+  // Clear Display
+//  lcd.clear();
 
-  // Update Display each Display Interval
-  if(millis() - displayTime > DISPLAY_INTERVAL)
-  {
-    // Clear Display
-    lcd.clear();
+  // Print Average Windspeed
+  lcd.setCursor(0,0);
+  lcd.print("WIND: ");
+  lcd.print(averageSpeed());
+  lcd.print(" m/s    ");
 
-    // Print Average Windspeed
-    lcd.setCursor(0,0);
-    lcd.print("WIND: ");
-    lcd.print(averageSpeed());
-    lcd.print(" m/s");
-
-    // Print Average Voltage
-    lcd.setCursor(1,0);
-    lcd.print("VOLT: ");
-    lcd.print(averageVoltage());
-    lcd.print(" V");
-
-    // Update Display Time
-    displayTime = millis();
-  }
+  // Print Average Voltage
+  lcd.setCursor(0,1);
+  lcd.print("VOLTAGE: ");
+  lcd.print(averageVoltage());
+  lcd.print(" V    ");
 
   return 0;
 }
