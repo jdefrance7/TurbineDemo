@@ -25,7 +25,7 @@ VOLTAGE = 1
 
 # Max Values (to Scale Graphs)
 MAX_WIND = 10
-MAX_VOLTAGE = 6
+MAX_VOLTAGE = 4
 
 # Refresh Rate of Matplotlib Animation (ms)
 REFRESH = 1000
