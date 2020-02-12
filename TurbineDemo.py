@@ -1,3 +1,6 @@
+# Logging Package
+import logging
+
 # Serial Package
 import serial
 
@@ -14,12 +17,22 @@ import numpy as np
 # Debug Flag
 DEBUG = True
 
+# Log Setup
+log = logging.getLogger('TurbineDemo')
+log.setLevel(logging.DEBUG)
+sth = logging.StreamHandler()
+sth.setLevel(logging.DEBUG)
+fmt = logging.Formatter('\n%(levelname)s: %(message)s')
+sth.setFormatter(fmt)
+log.addHandler(sth)
+
 # Serial Port Object
 ser = serial.Serial()
 ser.baudrate = 9600
 SERIAL_ENABLED = False
 
 # Data & Axes Indexes
+DATA_LENGTH = 2
 WIND = 0
 VOLTAGE = 1
 
@@ -64,7 +77,7 @@ def get_data():
 
     # Check if serial port is open
     if ser.isOpen() == False:
-        print("\nERROR: Serial port '{}' is not open.".format(ser.port))
+        log.error("Serial port {} is not open.".format(ser.port))
         return -1
 
     # Clear Input Buffer
@@ -72,63 +85,60 @@ def get_data():
         try:
             ser.readline()
         except:
-            print("\nERROR: Unable to clear input buffer.")
+            log.error("Unable to clear input buffer.")
             return -1
 
     # Read new line of bytes from serial port
     try:
         data = ser.readline()
     except:
-        print("\nERROR: Issue reading data '{}'.".format(data))
+        log.error("Issue reading data '{}'.".format(data))
         return -1
 
-    if DEBUG:
-        print("\nDEBUG: Raw data = {}".format(repr(data)))
+    log.debug("Raw data = {}.".format(repr(data)))
 
     # Convert bytes to string
     try:
         data = data.decode("utf-8")
     except:
-        print("\nERROR: Issue decoding data '{}'.".format(data))
+        log.error("Issue decoding data '{}'.".format(data))
         return -1
 
-    if DEBUG:
-        print("\nDEBUG: Decoded data = {}".format(repr(data)))
+    log.debug("Decoded data = {}.".format(repr(data)))
 
     # Strips carriage return and newline from data
     try:
         data = data.rstrip('\r\n')
     except:
-        print("\nERROR: Unable to strip trailing data '{}'.".format(data))
+        log.error("Unable to strip trailing data.")
+        return -1
 
-    if DEBUG:
-        print("\nDEBUG: Stripped data = {}".format(data))
+    log.debug("Stripped data = {}.".format(data))
 
     # Split string into list by delimiter ','
     try:
         data = data.split(',')
     except:
-        print("\nERROR: Issue splitting data '{}'.".format(data))
+        log.error("Issue splitting data '{}'.".format(data))
         return -1
 
-    if DEBUG:
-        print("\nDEBUG: Split data = {}".format(data))
+    log.debug("Split data = {}.".format(data))
 
     # Ensure list is correct length [averageSpeed, averageVoltage]
-    if len(data) != 2:
-        print("\nERROR: Data is incorrect length '{}'.".format(data))
+    if len(data) != DATA_LENGTH:
+        log.error("Data is incorrect length '{}'.".format(data))
         return -1
 
     # Convert list of strings to list of floats
     try:
-        for n in range(len(data)):
-            data[n] = float(data[n])
+        for index, value in enumerate(data):
+            data[index] = float(value)
+
     except:
-        print("\nERROR: Unable to cast data to float '{}'.".format(data))
+        log.error("Unable to cast data to float '{}'.".format(data))
         return -1
 
-    if DEBUG:
-        print("\nDEBUG: Float casted data = {}".format(data))
+    log.debug("Float casted data = {}.".format(data))
 
     # Return list of float data
     return data
@@ -141,6 +151,7 @@ def animate(i):
 
     # No data...
     if data == -1:
+        log.debug("Unable to read data for plotting.")
         return -1
 
     ax[WIND].clear()
@@ -167,14 +178,8 @@ def run_demo():
     try:
         ser.open()
     except:
-        print("\nERROR: Unable to open port '{}' with baudrate '{}'.".format(ser.port, ser.baudrate))
+        log.error("Unable to open port '{}' with baudrate '{}'.".format(ser.port, ser.baudrate))
         return -1
-
-    # # Turn on Data Broadcast
-    # try:
-    #     ser.write('B'.encode("utf-8"))
-    # except:
-    #     return -1
 
     ani = animation.FuncAnimation(fig, animate, interval = REFRESH)
 
@@ -203,7 +208,7 @@ def set_port(ser):
 
     # If no ports were found
     if len(ports) == 0:
-        print("\nERROR: No ports found. Check connection.")
+        log.error("No ports found. Check connection.")
         return -1
 
     # Print available ports with numbered list
@@ -219,15 +224,16 @@ def set_port(ser):
         try:
             ser.port = user
         except:
-            print("\nERROR: Invalid port '{}'.".format(user))
+            log.error("Invalid port '{}'.".format(user))
             return -1
         return 0
 
     # Check if port number was entered
     try:
-        user = int(user)-1
+        user = int(user)
+        user = user-1
     except:
-        print("\nERROR: Invalid entry '{}.".format(user))
+        log.error("Invalid entry '{}'.".format(user))
         return -1
 
     # Check if port number in valid range
@@ -235,12 +241,12 @@ def set_port(ser):
         try:
             ser.port = ports[user]
         except:
-            print("\nERROR: Invalid port '{}'.".format(ports[user]))
+            log.error("Invalid port '{}'.".format(ports[user]))
             return -1
         return 0
 
     # Unable to set serial port
-    print("\nERROR: Invalid port '{}'.".format(ports[user]))
+    log.error("Invalid port '{}'".format(ports[user]))
     return -1
 
 def set_baudrate(ser):
@@ -260,14 +266,14 @@ def set_baudrate(ser):
     try:
         user = int(user)
     except:
-        print("\nERROR: Invalid baudrate '{}'.".format(user))
+        log.error("Invalid baudrate '{}'.".format(user))
         return -1
 
     # Attempt to set baudrate
     try:
         ser.baudrate = user
     except:
-        print("\nERROR: Invalid baudrate '{}'.".format(user))
+        log.error("Invalid baudrate '{}'.".format(user))
         return -1
     return 0
 
@@ -277,28 +283,16 @@ def test_connection(ser):
     try:
         ser.open()
     except:
-        print("\nERROR: Unable to open port '{}' with baudrate '{}'.".format(ser.port, ser.baudrate))
+        log.error("Unable to open port '{}' with baudrate '{}'.".format(ser.port, ser.baudrate))
         return False
-
-    # # Exit broadcast mode on Arduino (if applicable)
-    # try:
-    #     ser.write('S'.encode("utf-8"))
-    # except:
-    #     return False
 
     # Clear serial input buffer
     while ser.in_waiting:
         ser.read()
 
-    # # Send request for single data pair
-    # try:
-    #     ser.write('D'.encode("utf-8"))
-    # except:
-    #     return False
-
     # Check for return data
     if get_data() == -1:
-        print("\nERROR: No response from serial port.")
+        log.error("No response from serial port.")
         return False
 
     ser.close()
@@ -342,7 +336,7 @@ def loop():
     try:
         user = int(user)
     except:
-        print("\nERROR: Invalid entry '{}'.".format(user))
+        log.error("Invalid entry '{}'.".format(user))
         return -1
 
     # Quit execution
@@ -355,9 +349,9 @@ def loop():
             try:
                 run_demo()
             except Exception as e:
-                print("\nERROR: Exception '{}'.".format(e))
+                log.error("Exception '{}'.".format(e))
         else:
-            print("\nERROR: Serial port must be connected before running demo.")
+            log.error("Serial port must be connected before running demo.")
 
     # Test connection with Arduino
     elif user == 2:
@@ -373,7 +367,7 @@ def loop():
 
     # Unrecognized input
     else:
-        print("\nERROR: Invalid entry '{}'.".format(user))
+        log.error("Invalid entry '{}'.".format(user))
 
     # Return
     return 0
@@ -382,5 +376,5 @@ if __name__ == '__main__':
     setup()
     while(1):
         if loop() == -1:
-            print("\nExiting demo...\n");
+            log.info("Exiting demo...\n")
             break;
